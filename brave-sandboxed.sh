@@ -19,6 +19,20 @@
 # Resolve runtime directory for audio/display sockets
 XDG_RUNTIME_DIR="${XDG_RUNTIME_DIR:-/run/user/$(id -u)}"
 
+wait_for_socket() {
+  local path="$1"
+  local tries=50
+  while [ ! -S "$path" ] && [ $tries -gt 0 ]; do
+    sleep 0.1
+    tries=$((tries - 1))
+  done
+  if [ ! -S "$path" ]; then
+    echo "Timed out waiting for $path" >&2
+    exit 1
+  fi
+}
+
+
 setpriv --pdeathsig TERM -- xdg-dbus-proxy \
   "unix:path=/run/dbus/system_bus_socket" \
   "$XDG_RUNTIME_DIR/brave-dbus-proxy" \
@@ -44,6 +58,10 @@ SESSION_PROXY_PID=$!
 
 BRAVE_TMPDIR="$HOME/.cache/BraveSoftware/Brave-Browser/sandbox-tmp"
 
+
+wait_for_socket "$XDG_RUNTIME_DIR/brave-dbus-proxy"
+wait_for_socket "$XDG_RUNTIME_DIR/brave-session-dbus-proxy"
+
 exec bwrap \
   --unshare-user \
   --unshare-ipc \
@@ -60,6 +78,8 @@ exec bwrap \
   --proc /proc \
   --dev /dev \
   --dev-bind-try /dev/dri /dev/dri \
+  --dev-bind-try /dev/video0 /dev/video0 \
+  --dev-bind-try /dev/video1 /dev/video1 \
   --ro-bind /sys/dev/char /sys/dev/char \
   --ro-bind /sys/devices /sys/devices \
   --tmpfs /tmp \
