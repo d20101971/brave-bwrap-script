@@ -9,6 +9,8 @@ Video conferencing has been tested and worked every time.
 
 Nvidia compatibility and hardware acceleration not tested. Apparmor compatibility not tested.
 
+Currently assumes usrmerge (bin referring to usr/bin, etc)
+
 Currently Wayland only.
 
 
